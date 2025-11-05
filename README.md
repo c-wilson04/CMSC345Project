@@ -66,9 +66,28 @@ This project uses **uv** as the environment and package manager.
 ```
 .
 ├── README.md
-├── sequences_training.txt    # Training dataset
-└── sequences_test.txt         # Test dataset (when available)
+├── sequences_training.txt    # Training dataset (original sequences)
+├── training_dataset.csv       # Training dataset with features (tracked via Git LFS)
+├── protein_classifier.ipynb   # Jupyter notebook with classifier implementation
+└── progress_report.qmd        # Quarto document for progress report
 ```
+
+### Downloading the Training Dataset
+
+The `training_dataset.csv` file is tracked using **Git LFS** (Large File Storage). To download it:
+
+1. **Clone with LFS** (recommended):
+   ```bash
+   git lfs clone https://github.com/c-wilson04/CMSC345Project.git
+   ```
+   
+2. **Or if you already cloned**, install LFS and pull:
+   ```bash
+   git lfs install
+   git lfs pull
+   ```
+
+The file will be automatically downloaded when you clone or pull the repository.
 
 ## Evaluation Metrics
 

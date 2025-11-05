@@ -4,5 +4,4 @@ sequences_training.txt
 __pycache__/
 uv.lock
 *.pdf
-training_dataset.csv
 .ipynb_checkpoints/
