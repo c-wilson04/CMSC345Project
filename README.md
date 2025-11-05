@@ -66,15 +66,15 @@ This project uses **uv** as the environment and package manager.
 ```
 .
 ├── README.md
-├── sequences_training.txt    # Training dataset (original sequences)
+├── sequences_training.txt    # Training dataset (original sequences, tracked via Git LFS)
 ├── training_dataset.csv       # Training dataset with features (tracked via Git LFS)
 ├── protein_classifier.ipynb   # Jupyter notebook with classifier implementation
 └── progress_report.qmd        # Quarto document for progress report
 ```
 
-### Downloading the Training Dataset
+### Downloading the Training Datasets
 
-The `training_dataset.csv` file is tracked using **Git LFS** (Large File Storage). To download it:
+The `sequences_training.txt` and `training_dataset.csv` files are tracked using **Git LFS** (Large File Storage). To download them:
 
 1. **Clone with LFS** (recommended):
    ```bash
