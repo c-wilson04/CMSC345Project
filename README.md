@@ -51,9 +51,15 @@ This project uses **uv** as the environment and package manager.
    ```
 
 3. Install project dependencies:
+
    ```bash
    uv pip install -r requirements.txt
    ```
+
+4. Install Quarto (required for PDF report generation):
+   - Download from: https://quarto.org/docs/get-started/
+   - Or via Homebrew: `brew install --cask quarto`
+   - Verify installation: `quarto --version`
 
 ## Project Structure
 

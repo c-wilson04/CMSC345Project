@@ -1,1 +1,8 @@
 sequences_training.txt
+.DS_Store
+*.pyc
+__pycache__/
+uv.lock
+*.pdf
+training_dataset.csv
+.ipynb_checkpoints/

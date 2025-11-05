@@ -1,0 +1,238 @@
+---
+title: "Progress Report - Protein Interaction Prediction"
+subtitle: "CMSC 435 Group Project"
+author: "Column Crushers (Connor Fair, Charles Wilson)"
+date: today
+format:
+  pdf:
+    documentclass: article
+    geometry: margin=1in
+    fig-dpi: 300
+    keep-tex: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Part A: Description of First Attempt
+
+## Features Generated
+
+- **Amino acid composition (20 features)**
+  - Frequency of each of the 20 standard amino acids (A, C, D, E, F, G, H, I, K, L, M, N, P, Q, R, S, T, V, W, Y)
+  - Each feature represents the percentage of that amino acid in the protein sequence
+  - Features sum to 100% for each protein sequence
+
+## Data Processing Steps
+
+- Loaded protein sequences and labels from `sequences_training.txt` (8,795 proteins)
+- Extracted amino acid composition features for each protein sequence
+- Converted sequences to feature vectors (20 numerical features per protein)
+- No additional preprocessing (no normalization, no feature scaling, no missing value handling)
+
+## Classification Algorithm
+
+- **Decision Tree Classifier** (from scikit-learn)
+- Used default parameters:
+  - `max_depth=None` (no limit on tree depth)
+  - `min_samples_split=2`
+  - `min_samples_leaf=1`
+  - `random_state=42` for reproducibility
+- 5-fold stratified cross-validation to handle class imbalance
+
+# Part B: Results
+
+## Model Training and Evaluation
+
+```{python}
+#| echo: true
+#| output: true
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from collections import Counter
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.metrics import (
+    confusion_matrix, 
+    accuracy_score, 
+    matthews_corrcoef,
+    classification_report
+)
+
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# Configure plotting
+sns.set_style('darkgrid')
+sns.set_palette("husl")
+
+# Load training data
+data = pd.read_csv('sequences_training.txt', names=['sequence', 'label'])
+
+print(f"Dataset loaded: {data.shape[0]} proteins, {data.shape[1]} columns")
+print(f"Classes: {data['label'].value_counts().to_dict()}")
+```
+
+```{python}
+#| echo: true
+#| output: true
+
+# Standard 20 amino acids
+AMINO_ACIDS = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 
+               'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+
+def calculate_amino_acid_composition(sequence):
+    """Calculate the frequency of each amino acid in a protein sequence."""
+    sequence = sequence.upper()
+    seq_length = len(sequence)
+    
+    if seq_length == 0:
+        return {aa: 0.0 for aa in AMINO_ACIDS}
+    
+    # Count amino acids
+    aa_counts = Counter(sequence)
+    
+    # Calculate frequencies (as percentages)
+    composition = {}
+    for aa in AMINO_ACIDS:
+        composition[aa] = (aa_counts.get(aa, 0) / seq_length) * 100
+    
+    return composition
+
+# Extract features for all sequences
+print("Extracting amino acid composition features...")
+features_list = []
+
+for idx, row in data.iterrows():
+    composition = calculate_amino_acid_composition(row['sequence'])
+    features_list.append(composition)
+    
+    if (idx + 1) % 2000 == 0:
+        print(f"  Processed {idx + 1}/{len(data)} sequences...")
+
+# Convert to DataFrame
+X = pd.DataFrame(features_list)
+y = data['label']
+
+print(f"\nFeature matrix shape: {X.shape}")
+print(f"Target vector shape: {y.shape}")
+```
+
+```{python}
+#| echo: true
+#| output: true
+
+# Initialize Decision Tree Classifier
+dt_classifier = DecisionTreeClassifier(
+    random_state=42,
+    max_depth=None,
+    min_samples_split=2,
+    min_samples_leaf=1
+)
+
+# Perform 5-fold stratified cross-validation
+print("Performing 5-fold stratified cross-validation...\n")
+
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+# Get predictions using cross-validation
+y_pred = cross_val_predict(dt_classifier, X, y, cv=skf)
+
+print("Cross-validation complete!")
+print(f"Predictions shape: {y_pred.shape}")
+```
+
+```{python}
+#| echo: true
+#| output: true
+
+# Calculate confusion matrix
+classes = ['DNA', 'RNA', 'DRNA', 'nonDRNA']
+cm = confusion_matrix(y, y_pred, labels=classes)
+
+# Display confusion matrix
+print("="*80)
+print("4x4 CONFUSION MATRIX")
+print("="*80)
+cm_df = pd.DataFrame(cm, index=classes, columns=classes)
+print(cm_df.to_string())
+print("="*80)
+```
+
+```{python}
+#| echo: true
+#| output: true
+
+# Calculate MCC for each class
+mcc_values = {}
+for cls in classes:
+    y_true_binary = (y == cls).astype(int)
+    y_pred_binary = (y_pred == cls).astype(int)
+    mcc = matthews_corrcoef(y_true_binary, y_pred_binary)
+    mcc_values[cls] = mcc
+
+print("\n" + "="*80)
+print("MATTHEWS CORRELATION COEFFICIENT (MCC) VALUES")
+print("="*80)
+for cls in classes:
+    print(f"MCC_{cls}: {mcc_values[cls]:.4f}")
+print("="*80)
+
+print(f"\nSum of MCC values: {sum(mcc_values.values()):.4f}")
+```
+
+```{python}
+#| echo: false
+#| fig-cap: "4x4 Confusion Matrix"
+#| fig-height: 6
+#| fig-width: 8
+
+# Create visualization of confusion matrix
+fig, ax = plt.subplots(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+            xticklabels=classes, yticklabels=classes,
+            cbar_kws={'label': 'Count'}, ax=ax)
+ax.set_title('Confusion Matrix - Decision Tree Classifier', fontsize=14, fontweight='bold', pad=20)
+ax.set_xlabel('Predicted Label', fontsize=12)
+ax.set_ylabel('True Label', fontsize=12)
+plt.tight_layout()
+plt.show()
+```
+
+## Summary
+
+The confusion matrix and MCC values shown above represent the performance of our initial Decision Tree classifier on the protein interaction prediction task using amino acid composition features.
+
+# Part C: Training Dataset
+
+The training dataset file is generated separately as a CSV file with the following structure:
+
+- **20 features**: One column for each amino acid (A, C, D, E, F, G, H, I, K, L, M, N, P, Q, R, S, T, V, W, Y)
+- **1 class column**: The last (right-most) column contains the class label (DNA, RNA, DRNA, or nonDRNA)
+- **8,795 rows**: One row per protein sequence
+
+```{python}
+#| echo: true
+#| output: true
+
+# Generate training dataset file (Part C)
+training_data = X.copy()
+training_data['class'] = y.values
+
+# Save to CSV
+training_data.to_csv('training_dataset.csv', index=False)
+
+print("Training dataset saved to 'training_dataset.csv'")
+print(f"Dataset shape: {training_data.shape}")
+print(f"Columns: {list(training_data.columns)}")
+print(f"\nFirst few rows:")
+print(training_data.head())
+print(f"\nClass distribution:")
+print(training_data['class'].value_counts())
+```
+
