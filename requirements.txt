@@ -10,6 +10,8 @@ ipykernel>=6.25.0
 biopython>=1.86
 modlamp>=4.3.2
 imbalanced-learn>=0.14.0
+skorch>=1.2.0
+torch>=2.9.0
 
 # Note: Quarto is required for PDF report generation but must be installed separately
 # Install from: https://quarto.org/docs/get-started/
